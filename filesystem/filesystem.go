@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/another-d-mention/unicomplex/crypt/hashing"
+	"github.com/fsnotify/fsnotify"
 )
 
 // File is the interface compatible with os.File.
@@ -21,6 +22,8 @@ type File interface {
 	Stat() (os.FileInfo, error)
 	Sync() error
 }
+
+type Event = fsnotify.Event
 
 type FileSystem interface {
 	// Open opens the named file.
@@ -47,4 +50,10 @@ type FileSystem interface {
 	FileHash(path string, hasher hashing.Hasher) (hashing.Sum, error)
 	// Sub returns a new FileSystem rooted at dir
 	Sub(dir string) (FileSystem, error)
+	// Watch a file or directory for changes.
+	Watch(path string, callback chan Event) error
+	// Unwatch removes a watch on a file or directory.
+	Unwatch(path string, callback chan Event) error
+	// RootDir Returns the root directory of the filesystem.
+	RootDir() string
 }
