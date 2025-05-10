@@ -17,9 +17,15 @@ func NewCRC32Hasher() CRCHasher {
 	}
 }
 
-func NewCRC64HAsher() CRCHasher {
+func NewCRC64Hasher() CRCHasher {
 	return CRCHasher{
 		hasher: crc64.New(crc64.MakeTable(crc64.ISO)),
+	}
+}
+
+func NewCRC64ECMAHasher() CRCHasher {
+	return CRCHasher{
+		hasher: crc64.New(crc64.MakeTable(crc64.ECMA)),
 	}
 }
 

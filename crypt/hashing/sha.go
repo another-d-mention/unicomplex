@@ -1,6 +1,7 @@
 package hashing
 
 import (
+	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
 	"hash"
@@ -11,9 +12,21 @@ type ShaHasher struct {
 	hasher hash.Hash
 }
 
+func NewSHA1Hasher() ShaHasher {
+	return ShaHasher{
+		hasher: sha1.New(),
+	}
+}
+
 func NewSHA256Hasher() ShaHasher {
 	return ShaHasher{
 		hasher: sha256.New(),
+	}
+}
+
+func NewSHA384Hasher() ShaHasher {
+	return ShaHasher{
+		hasher: sha512.New384(),
 	}
 }
 
