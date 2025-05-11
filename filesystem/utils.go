@@ -4,6 +4,9 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
+	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 func absolutePath(root, path string) string {
@@ -40,4 +43,18 @@ func relativePath(root, path string) string {
 		path = "/" + path
 	}
 	return path
+}
+
+func GetBlockSize(path string) (int, error) {
+	var stat unix.Statfs_t
+	err := unix.Statfs(path, &stat)
+	if err != nil {
+		return 0, err
+	}
+
+	return int(stat.Bsize), nil
+}
+
+func GetPageSize() int {
+	return syscall.Getpagesize()
 }

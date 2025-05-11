@@ -42,4 +42,11 @@ func TestHashing(t *testing.T) {
 	if hash := NewAdler32Hasher().Bytes(data).String(); hash != "205e048a" {
 		t.Error("Adler32 hash incorrect")
 	}
+
+	if hash := NewMurmur128Hasher().Bytes(data).String(); hash != "f1512dd1d2d665df2c326650a8f3c564" {
+		t.Error("MurmurHash incorrect", hash)
+	}
+	if hash := NewMurmur256Hasher().Bytes(data).String(); hash != "f1512dd1d2d665df2c326650a8f3c5642c50f72fb1e979de3e5e04cbb3d65acd" {
+		t.Error("MurmurHash incorrect", hash)
+	}
 }
