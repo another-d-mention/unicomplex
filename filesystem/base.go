@@ -22,6 +22,10 @@ func (b *base) RootDir() string {
 	return b.userRoot
 }
 
+func (b *base) RootAbs() string {
+	return b.rootDir
+}
+
 func (b *base) initWatch() error {
 	if b.watcher != nil {
 		return nil

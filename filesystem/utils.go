@@ -23,8 +23,18 @@ func absolutePath(root, path string) string {
 			path = path[1:]
 		}
 	}
+
+	if !filepath.IsAbs(path) && root == "/" {
+		path, _ = filepath.Abs(path)
+	}
+
+	out := filepath.Clean(filepath.Join(root, path))
+	if !strings.HasPrefix(out, root) {
+		out = filepath.Clean(filepath.Join(root, filepath.Clean(path)))
+	}
+
 	path = filepath.Clean(path)
-	out := filepath.Join("/", path)
+	out = filepath.Join("/", path)
 	out = filepath.Join(root, out)
 
 	if !strings.HasPrefix(out, root) {

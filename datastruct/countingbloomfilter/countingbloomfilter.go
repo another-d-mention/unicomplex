@@ -90,6 +90,19 @@ func (f *CountingBloomFilter[T]) Add(data []byte) *CountingBloomFilter[T] {
 	return f
 }
 
+// Delete data from the Bloom Filter. Returns the filter (allows chaining)
+func (f *CountingBloomFilter[T]) Delete(data []byte) *CountingBloomFilter[T] {
+	h := baseHashes(data)
+	for i := uint(0); i < f.k; i++ {
+		val := f.data[f.location(h, i)]
+		if val == 0 {
+			continue
+		}
+		f.data[f.location(h, i)]--
+	}
+	return f
+}
+
 // Test returns true if the data is in the CountingBloomFilter, false otherwise.
 // If true, the result might be a false positive. If false, the data
 // is definitely not in the set.

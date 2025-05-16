@@ -56,4 +56,6 @@ type FileSystem interface {
 	Unwatch(path string, callback chan Event) error
 	// RootDir Returns the root directory of the filesystem.
 	RootDir() string
+	// RootAbs Returns the absolute path to the root directory of the filesystem.
+	RootAbs() string
 }

@@ -23,8 +23,10 @@ func NewDiskFilesystem() FileSystem {
 
 func (d *DiskFilesystem) Open(name string, flags int, perm os.FileMode) (File, error) {
 	if !d.Exists(filepath.Dir(name)) {
-		if err := d.CreateDir(filepath.Dir(name)); err != nil {
-			return nil, err
+		if flags&os.O_CREATE != 0 {
+			if err := d.CreateDir(filepath.Dir(name)); err != nil {
+				return nil, err
+			}
 		}
 	}
 	f, e := os.OpenFile(absolutePath(d.rootDir, name), flags, perm)
@@ -108,7 +110,7 @@ func (d *DiskFilesystem) Copy(source, destination string) error {
 }
 
 func (d *DiskFilesystem) Stat(path string) (os.FileInfo, error) {
-	return d.Stat(absolutePath(d.rootDir, path))
+	return os.Stat(absolutePath(d.rootDir, path))
 }
 
 func (d *DiskFilesystem) Exists(path string) bool {
