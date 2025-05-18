@@ -5,17 +5,20 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"io"
+	"time"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/argon2"
 )
 
 type User struct {
-	id           uuid.UUID
-	username     string
-	passwordHash [32]byte
-	passwordSalt [16]byte
-	groups       []uuid.UUID
+	id              uuid.UUID
+	username        string
+	passwordHash    [32]byte
+	passwordSalt    [16]byte
+	lastLogin       time.Time
+	passwordChanged time.Time
+	groups          []uuid.UUID
 
 	groupNames []string
 }
@@ -27,6 +30,14 @@ func (u *User) ID() uuid.UUID {
 
 func (u *User) Username() string {
 	return u.username
+}
+
+func (u *User) LastLogin() time.Time {
+	return u.lastLogin
+}
+
+func (u *User) PasswordChangeDate() time.Time {
+	return u.passwordChanged
 }
 
 func (u *User) GroupIDs() []uuid.UUID {
@@ -45,6 +56,10 @@ func (u *User) marshalBinary(w io.Writer) {
 	_ = binary.Write(w, binary.BigEndian, u.id[:])
 	_ = binary.Write(w, binary.BigEndian, byte(len(u.username)))
 	_ = binary.Write(w, binary.BigEndian, []byte(u.username))
+	l, _ := u.lastLogin.MarshalBinary()
+	_ = binary.Write(w, binary.BigEndian, l)
+	b, _ := u.passwordChanged.MarshalBinary()
+	_ = binary.Write(w, binary.BigEndian, b)
 	_ = binary.Write(w, binary.BigEndian, u.passwordHash[:])
 	_ = binary.Write(w, binary.BigEndian, u.passwordSalt[:])
 	_ = binary.Write(w, binary.BigEndian, byte(len(u.groups)))
@@ -66,6 +81,20 @@ func (u *User) unmarshalBinary(r io.Reader) error {
 		return err
 	}
 	u.username = string(usernameBytes)
+	b := make([]byte, 15)
+	if err := binary.Read(r, binary.BigEndian, b); err != nil {
+		return err
+	}
+	if err := u.lastLogin.UnmarshalBinary(b); err != nil {
+		return err
+	}
+	x := make([]byte, 15)
+	if err := binary.Read(r, binary.BigEndian, x); err != nil {
+		return err
+	}
+	if err := u.passwordChanged.UnmarshalBinary(x); err != nil {
+		return err
+	}
 	if err := binary.Read(r, binary.BigEndian, &u.passwordHash); err != nil {
 		return err
 	}
@@ -95,10 +124,11 @@ func newUser(username, password string) (*User, error) {
 	}
 
 	u := &User{
-		id:           id,
-		username:     username,
-		passwordSalt: salt,
-		groups:       []uuid.UUID{},
+		id:              id,
+		username:        username,
+		passwordSalt:    salt,
+		passwordChanged: time.Now(),
+		groups:          []uuid.UUID{},
 	}
 
 	u.passwordHash = u.hashPassword(password)
@@ -132,7 +162,11 @@ func (u *User) HasGroup(groupNameOrId string) bool {
 
 func (u *User) VerifyPassword(password string) bool {
 	p := u.hashPassword(password)
-	return hmac.Equal(u.passwordHash[:], p[:])
+	if hmac.Equal(u.passwordHash[:], p[:]) {
+		u.lastLogin = time.Now()
+		return true
+	}
+	return false
 }
 
 type Group struct {

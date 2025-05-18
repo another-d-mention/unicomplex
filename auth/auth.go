@@ -12,12 +12,14 @@ type Auth struct {
 	lock   sync.RWMutex
 	users  map[string]*User
 	groups map[string]*Group
+	acl    *ACL
 }
 
 func New() *Auth {
 	return &Auth{
 		users:  make(map[string]*User),
 		groups: make(map[string]*Group),
+		acl:    NewACL(),
 	}
 }
 
@@ -215,6 +217,10 @@ func (a *Auth) RemoveUserFromGroup(username, groupName string) error {
 // ---------------- ACL ---------------
 
 func (a *Auth) ACLUsers(acl *ACL) map[string]Permission {
+	if acl == nil {
+		acl = a.acl
+	}
+
 	acl.lock.RLock()
 	defer acl.lock.RUnlock()
 
@@ -229,6 +235,10 @@ func (a *Auth) ACLUsers(acl *ACL) map[string]Permission {
 }
 
 func (a *Auth) AddUserToACL(acl *ACL, usernameOrId string, permission Permission) error {
+	if acl == nil {
+		acl = a.acl
+	}
+
 	u, ok := a.GetUser(usernameOrId) // validate user
 	if !ok {
 		return ErrUserNotFound
@@ -240,6 +250,10 @@ func (a *Auth) AddUserToACL(acl *ACL, usernameOrId string, permission Permission
 }
 
 func (a *Auth) RemoveUserFromACL(acl *ACL, usernameOrId string) error {
+	if acl == nil {
+		acl = a.acl
+	}
+
 	u, ok := a.GetUser(usernameOrId) // validate user
 	if !ok {
 		return ErrUserNotFound
@@ -253,6 +267,10 @@ func (a *Auth) RemoveUserFromACL(acl *ACL, usernameOrId string) error {
 }
 
 func (a *Auth) ACLGroups(acl *ACL) map[string]Permission {
+	if acl == nil {
+		acl = a.acl
+	}
+
 	acl.lock.RLock()
 	defer acl.lock.RUnlock()
 
@@ -267,6 +285,10 @@ func (a *Auth) ACLGroups(acl *ACL) map[string]Permission {
 }
 
 func (a *Auth) GetPermission(acl *ACL, nameOrId string) (Permission, bool) {
+	if acl == nil {
+		acl = a.acl
+	}
+
 	a.lock.RLock()
 	defer a.lock.RUnlock()
 
@@ -305,6 +327,10 @@ func (a *Auth) GetPermission(acl *ACL, nameOrId string) (Permission, bool) {
 }
 
 func (a *Auth) AddGroupToACL(acl *ACL, groupOrId string, permission Permission) error {
+	if acl == nil {
+		acl = a.acl
+	}
+
 	g, ok := a.GetGroup(groupOrId) // validate group
 	if !ok {
 		return ErrGroupNotFound
@@ -318,6 +344,10 @@ func (a *Auth) AddGroupToACL(acl *ACL, groupOrId string, permission Permission) 
 }
 
 func (a *Auth) RemoveGroupFromACL(acl *ACL, groupOrId string) error {
+	if acl == nil {
+		acl = a.acl
+	}
+
 	g, ok := a.GetGroup(groupOrId) // validate group
 	if !ok {
 		return ErrGroupNotFound
@@ -344,11 +374,12 @@ func (a *Auth) MarshalBinary(w io.Writer) error {
 	for _, g := range a.groups {
 		g.marshalBinary(w)
 	}
-	return nil
+
+	return a.acl.MarshalBinary(w)
 }
 
 func (a *Auth) UnmarshalBinary(r io.Reader) error {
-	var numUsers, numGroups byte
+	var numUsers, numGroups uint64
 	err := binary.Read(r, binary.BigEndian, &numUsers)
 	if err != nil {
 		return err
@@ -380,6 +411,10 @@ func (a *Auth) UnmarshalBinary(r io.Reader) error {
 	a.users = users
 	a.groups = groups
 	a.lock.Unlock()
+
+	if err = a.acl.UnmarshalBinary(r); err != nil {
+		return err
+	}
 
 	return a.load()
 }

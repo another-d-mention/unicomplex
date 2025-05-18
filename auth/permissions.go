@@ -12,37 +12,33 @@ import (
 
 type Permission uint64
 
-func (p *Permission) SetAll() *Permission {
-	*p = math.MaxUint64
-	return p
+func (p Permission) SetAll() Permission {
+	return math.MaxUint64
 }
 
-func (p *Permission) Clear() *Permission {
-	*p = Permission(0)
-	return p
+func (p Permission) Clear() Permission {
+	return Permission(0)
 }
 
-func (p *Permission) Enable(permissions uint64) *Permission {
-	val := uint64(*p)
+func (p Permission) Enable(permissions uint64) Permission {
+	val := uint64(p)
 	val |= permissions
-	*p = Permission(val)
-	return p
+	return Permission(val)
 }
 
-func (p *Permission) Disable(permissions uint64) *Permission {
-	val := uint64(*p)
+func (p Permission) Disable(permissions uint64) Permission {
+	val := uint64(p)
 	val &= ^permissions
-	*p = Permission(val)
-	return p
+	return Permission(val)
 }
 
-func (p *Permission) HasPermission(permission uint64) bool {
-	val := uint64(*p)
+func (p Permission) HasPermission(permission uint64) bool {
+	val := uint64(p)
 	val &= permission
 	return val != 0
 }
 
-func (p *Permission) HasAnyPermission(list ...uint64) bool {
+func (p Permission) HasAnyPermission(list ...uint64) bool {
 	for _, o := range list {
 		if p.HasPermission(o) {
 			return true
@@ -51,7 +47,7 @@ func (p *Permission) HasAnyPermission(list ...uint64) bool {
 	return false
 }
 
-func (p *Permission) HasAllPermissions(list ...uint64) bool {
+func (p Permission) HasAllPermissions(list ...uint64) bool {
 	for _, o := range list {
 		if !p.HasPermission(o) {
 			return false
