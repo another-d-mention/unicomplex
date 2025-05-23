@@ -51,7 +51,7 @@ func (b *base) Watch(path string, callback chan Event) error {
 		return err
 	}
 
-	path = absolutePath(b.rootDir, path)
+	path = AbsolutePath(b.rootDir, path)
 
 	if err := b.watcher.Add(path); err != nil {
 		return err
@@ -71,7 +71,7 @@ func (b *base) Unwatch(path string, callback chan Event) error {
 		return nil
 	}
 
-	path = absolutePath(b.rootDir, path)
+	path = AbsolutePath(b.rootDir, path)
 
 	if existing, ok := b.watchers.Get(path); ok {
 		newCallbacks := make([]chan Event, 0, len(existing))

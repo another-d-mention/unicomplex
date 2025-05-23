@@ -20,9 +20,9 @@ func TestAbsolutePath(t *testing.T) {
 		{root: "/home/sy", path: "documents/../../pictures", expected: "/home/sy/pictures"},
 	}
 	for _, tc := range testCases {
-		actual := absolutePath(tc.root, tc.path)
+		actual := AbsolutePath(tc.root, tc.path)
 		if actual != tc.expected {
-			actual := absolutePath(tc.root, tc.path)
+			actual := AbsolutePath(tc.root, tc.path)
 			t.Errorf("Expected %s for %s and %s, got %s", tc.expected, tc.root, tc.path, actual)
 		} else {
 			t.Log(tc.root, "and", tc.path, "resolved to", tc.expected)
@@ -41,9 +41,9 @@ func TestRelativePath(t *testing.T) {
 		{root: "/home/sy", path: "/home/sy/documents", expected: "/documents"},
 	}
 	for _, tc := range testCases {
-		actual := relativePath(tc.root, tc.path)
+		actual := RelativePath(tc.root, tc.path)
 		if actual != tc.expected {
-			actual := relativePath(tc.root, tc.path)
+			actual := RelativePath(tc.root, tc.path)
 			t.Errorf("Expected %s for %s and %s, got %s", tc.expected, tc.root, tc.path, actual)
 		} else {
 			t.Log(tc.root, "and", tc.path, "resolved to", tc.expected)

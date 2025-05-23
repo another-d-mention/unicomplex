@@ -29,7 +29,7 @@ func (d *DiskFilesystem) Open(name string, flags int, perm os.FileMode) (File, e
 			}
 		}
 	}
-	f, e := os.OpenFile(absolutePath(d.rootDir, name), flags, perm)
+	f, e := os.OpenFile(AbsolutePath(d.rootDir, name), flags, perm)
 	if e != nil {
 		return nil, e
 	}
@@ -37,7 +37,7 @@ func (d *DiskFilesystem) Open(name string, flags int, perm os.FileMode) (File, e
 }
 
 func (d *DiskFilesystem) ReadDir(path string, recursive bool) ([]os.DirEntry, error) {
-	entries, err := os.ReadDir(absolutePath(d.rootDir, path))
+	entries, err := os.ReadDir(AbsolutePath(d.rootDir, path))
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (d *DiskFilesystem) ReadDir(path string, recursive bool) ([]os.DirEntry, er
 }
 
 func (d *DiskFilesystem) ReadFile(path string) ([]byte, error) {
-	return os.ReadFile(absolutePath(d.rootDir, path))
+	return os.ReadFile(AbsolutePath(d.rootDir, path))
 }
 
 func (d *DiskFilesystem) WriteFile(path string, data []byte) error {
@@ -66,15 +66,15 @@ func (d *DiskFilesystem) WriteFile(path string, data []byte) error {
 			return err
 		}
 	}
-	return os.WriteFile(absolutePath(d.rootDir, path), data, 0666)
+	return os.WriteFile(AbsolutePath(d.rootDir, path), data, 0666)
 }
 
 func (d *DiskFilesystem) CreateDir(path string) error {
-	return os.MkdirAll(absolutePath(d.rootDir, path), 0755)
+	return os.MkdirAll(AbsolutePath(d.rootDir, path), 0755)
 }
 
 func (d *DiskFilesystem) Remove(path string) error {
-	return os.RemoveAll(absolutePath(d.rootDir, path))
+	return os.RemoveAll(AbsolutePath(d.rootDir, path))
 }
 
 func (d *DiskFilesystem) Rename(oldPath, newPath string) error {
@@ -84,7 +84,7 @@ func (d *DiskFilesystem) Rename(oldPath, newPath string) error {
 		}
 	}
 
-	return os.Rename(absolutePath(d.rootDir, oldPath), absolutePath(d.rootDir, newPath))
+	return os.Rename(AbsolutePath(d.rootDir, oldPath), AbsolutePath(d.rootDir, newPath))
 }
 
 func (d *DiskFilesystem) Copy(source, destination string) error {
@@ -110,7 +110,7 @@ func (d *DiskFilesystem) Copy(source, destination string) error {
 }
 
 func (d *DiskFilesystem) Stat(path string) (os.FileInfo, error) {
-	return os.Stat(absolutePath(d.rootDir, path))
+	return os.Stat(AbsolutePath(d.rootDir, path))
 }
 
 func (d *DiskFilesystem) Exists(path string) bool {
@@ -133,11 +133,11 @@ func (d *DiskFilesystem) Sub(dir string) (FileSystem, error) {
 	return &DiskFilesystem{
 		base: &base{
 			userRoot: dir,
-			rootDir:  absolutePath(d.rootDir, dir),
+			rootDir:  AbsolutePath(d.rootDir, dir),
 		},
 	}, nil
 }
 
 func (d *DiskFilesystem) resolve(name string) string {
-	return absolutePath(d.userRoot, name)
+	return AbsolutePath(d.userRoot, name)
 }

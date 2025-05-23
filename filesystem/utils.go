@@ -2,6 +2,7 @@ package filesystem
 
 import (
 	"os/user"
+	"path"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -9,7 +10,32 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func absolutePath(root, path string) string {
+func ResolveVirtualPath(root, p string) string {
+	// Normalize root
+	root = path.Clean("/" + strings.Trim(root, "/"))
+
+	// Clean and join the path
+	joined := path.Join("/", p) // Treat path as relative to "/"
+	parts := strings.Split(joined, "/")
+
+	// Walk and clean components, discarding ".." that would escape
+	var cleanParts []string
+	for _, part := range parts {
+		if part == ".." {
+			if len(cleanParts) > 0 {
+				cleanParts = cleanParts[:len(cleanParts)-1]
+			}
+			// else ignore, prevents escaping
+		} else if part != "" && part != "." {
+			cleanParts = append(cleanParts, part)
+		}
+	}
+
+	// Rebuild within root
+	return path.Join(root, path.Join(cleanParts...))
+}
+
+func AbsolutePath(root, path string) string {
 	if path == "" || path == "/" {
 		return root
 	}
@@ -44,7 +70,7 @@ func absolutePath(root, path string) string {
 	return out
 }
 
-func relativePath(root, path string) string {
+func RelativePath(root, path string) string {
 	if path == "" || path == "/" {
 		return root
 	}

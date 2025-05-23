@@ -30,7 +30,7 @@ func NewMemoryFilesystem() FileSystem {
 
 func (m *MemoryFilesystem) Open(name string, flags int, perm os.FileMode) (File, error) {
 	originalName := name
-	name = absolutePath(m.rootDir, name)
+	name = ResolveVirtualPath(m.rootDir, name)
 
 	f, ok := m.files.Get(name)
 	if !ok {
@@ -58,7 +58,7 @@ func (m *MemoryFilesystem) Open(name string, flags int, perm os.FileMode) (File,
 }
 
 func (m *MemoryFilesystem) ReadDir(dir string, recursive bool) ([]os.DirEntry, error) {
-	dir = absolutePath(m.rootDir, dir)
+	dir = ResolveVirtualPath(m.rootDir, dir)
 
 	var entries []os.DirEntry
 	m.files.Range(func(key string, value *memoryFileData) bool {
@@ -82,7 +82,7 @@ func (m *MemoryFilesystem) ReadFile(path string) ([]byte, error) {
 		return nil, os.ErrNotExist
 	}
 
-	f, _ := m.files.Get(absolutePath(m.rootDir, path))
+	f, _ := m.files.Get(ResolveVirtualPath(m.rootDir, path))
 	data := make([]byte, f.size)
 	copy(data, f.data)
 
@@ -99,19 +99,20 @@ func (m *MemoryFilesystem) WriteFile(path string, data []byte) error {
 }
 
 func (m *MemoryFilesystem) CreateDir(dir string) error {
-	exists := m.files.Contains(absolutePath(m.rootDir, dir))
+	abs := ResolveVirtualPath(m.rootDir, dir)
+	exists := m.files.Contains(abs)
 	if exists {
 		return os.ErrExist
 	}
 
-	// yeah, we remove add then remove the rootDir, but the absolutePath also resolves relative paths
+	// yeah, we remove add then remove the rootDir, but the AbsolutePath also resolves relative paths
 	// so we use it for that purpose at the moment
-	path := strings.TrimPrefix(m.rootDir, absolutePath(m.rootDir, dir))
+	path := strings.TrimPrefix(abs, m.rootDir)
 
 	parents := strings.Split(path, "/")
 
-	for i := 1; i < len(parents); i++ {
-		target := absolutePath(m.rootDir, strings.Join(parents[:i+1], "/"))
+	for i := 0; i < len(parents); i++ {
+		target := ResolveVirtualPath(m.rootDir, "/"+strings.Join(parents[:i+1], "/"))
 		if _, ok := m.files.Get(target); !ok {
 			m.files.Set(target, &memoryFileData{
 				name: target,
@@ -129,7 +130,7 @@ func (m *MemoryFilesystem) Remove(path string) error {
 		return os.ErrNotExist
 	}
 
-	path = absolutePath(m.rootDir, path)
+	path = ResolveVirtualPath(m.rootDir, path)
 	f, _ := m.files.Get(path)
 
 	if f.IsDir() {
@@ -150,8 +151,8 @@ func (m *MemoryFilesystem) Rename(oldPath, newPath string) error {
 		return os.ErrNotExist
 	}
 
-	oldPath = absolutePath(m.rootDir, oldPath)
-	newPath = absolutePath(m.rootDir, newPath)
+	oldPath = ResolveVirtualPath(m.rootDir, oldPath)
+	newPath = ResolveVirtualPath(m.rootDir, newPath)
 
 	if oldPath == newPath { // no change
 		return nil
@@ -187,10 +188,10 @@ func (m *MemoryFilesystem) Copy(source, destination string) error {
 		return os.ErrNotExist
 	}
 
-	stat, _ := m.Stat(absolutePath(m.rootDir, source))
+	stat, _ := m.Stat(ResolveVirtualPath(m.rootDir, source))
 	if stat.IsDir() {
 
-		absSource := absolutePath(m.rootDir, source)
+		absSource := ResolveVirtualPath(m.rootDir, source)
 
 		filesToCopy, _ := m.ReadDir(source, true)
 		for _, file := range filesToCopy {
@@ -220,7 +221,7 @@ func (m *MemoryFilesystem) Copy(source, destination string) error {
 }
 
 func (m *MemoryFilesystem) Stat(path string) (os.FileInfo, error) {
-	f, ok := m.files.Get(absolutePath(m.rootDir, path))
+	f, ok := m.files.Get(ResolveVirtualPath(m.rootDir, path))
 	if !ok {
 		return nil, os.ErrNotExist
 	}
@@ -228,11 +229,11 @@ func (m *MemoryFilesystem) Stat(path string) (os.FileInfo, error) {
 }
 
 func (m *MemoryFilesystem) Exists(path string) bool {
-	return m.files.Contains(absolutePath(m.rootDir, path))
+	return m.files.Contains(ResolveVirtualPath(m.rootDir, path))
 }
 
 func (m *MemoryFilesystem) FileHash(path string, hasher hashing.Hasher) (hashing.Sum, error) {
-	f, ok := m.files.Get(absolutePath(m.rootDir, path))
+	f, ok := m.files.Get(ResolveVirtualPath(m.rootDir, path))
 	if !ok {
 		return nil, os.ErrNotExist
 	}
@@ -250,7 +251,7 @@ func (m *MemoryFilesystem) Sub(dir string) (FileSystem, error) {
 	return &MemoryFilesystem{
 		base: &base{
 			userRoot: dir,
-			rootDir:  absolutePath(m.rootDir, dir),
+			rootDir:  ResolveVirtualPath(m.rootDir, dir),
 		},
 		files: m.files,
 	}, nil
