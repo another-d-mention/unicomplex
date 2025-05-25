@@ -109,18 +109,27 @@ func (b *base) notify() {
 				return
 			}
 
+			list := make([]chan Event, 0)
+
 			listeners, ok := b.watchers.Get(event.Name)
 			if !ok {
-				continue
+				b.watchers.Range(func(path string, l []chan Event) bool {
+					if strings.HasPrefix(event.Name, path) {
+						list = append(list, l...)
+					}
+					return true
+				})
+				if len(list) == 0 {
+					continue
+				}
+			} else {
+				copy(list, listeners)
 			}
 
 			realPath := event.Name
 			if b.rootDir != "/" {
 				event.Name = "/" + strings.TrimPrefix(event.Name, b.rootDir)
 			}
-
-			list := make([]chan Event, len(listeners))
-			copy(list, listeners)
 
 			for _, c := range list {
 				var wg sync.WaitGroup

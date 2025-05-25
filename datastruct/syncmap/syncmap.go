@@ -1,7 +1,6 @@
 package syncmap
 
 import (
-	"reflect"
 	"sync"
 )
 
@@ -20,7 +19,7 @@ func (m *Map[K, V]) Set(key K, value V) {
 
 func (m *Map[K, V]) zeroVal() V {
 	var tmp V
-	return reflect.Zero(reflect.TypeOf(tmp)).Interface().(V)
+	return tmp
 }
 
 // Get returns the value stored in the map for a key, or zero value if key is not present.
